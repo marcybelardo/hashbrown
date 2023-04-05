@@ -62,13 +62,17 @@ pub fn run(message: &str) -> u128 {
     let length = message.len();
 
     for (slice, byte) in buf.iter_mut().zip(message.bytes()) {
-        *slice = u8::from_le(byte);
+        *slice = byte;
     }
     buf[length] |= 0x80;
 
     let len_bits: u64 = length as u64 * 8;
     for i in 0..8 {
-        buf[56 + i] = u8::from_le((len_bits >> (56 - i * 8)).try_into().unwrap());
+        buf[56 + i] = (len_bits >> (56 - i * 8)) as u8;
+    }
+
+    for byte in buf {
+        println!("{:08b}", byte);
     }
 
     let mut state: [u32; 4] = [
@@ -83,10 +87,17 @@ pub fn run(message: &str) -> u128 {
         *word = u32::from_le_bytes(chunk.try_into().unwrap());
     }
 
+    for word in m {
+        println!("{:032b}", word);
+    }
+
     let mut a = state[0];
     let mut b = state[1];
     let mut c = state[2];
     let mut d = state[3];
+
+    println!("Init array:");
+    println!("A: {:032b}\nB: {:032b}\nC: {:032b}\nD: {:032b}\n", a, b, c, d);
 
     // round 1 
     a = round_1(a, b, c, d, m[0], K[0], 7);
@@ -195,8 +206,8 @@ mod tests {
         let correct: u128 = 0xd41d8cd98f00b204e9800998ecf8427e;
         let hash: u128 = run(text);
 
-        println!("{:x} :: {:x}", hash, correct);
-        assert_eq!(hash, correct);
+        println!("{:032x} :: {:032x}", correct, hash);
+        assert_eq!(correct, hash);
     }
 
     #[test]
@@ -205,7 +216,17 @@ mod tests {
         let correct: u128 = 0x0cc175b9c0f1b6a831c399e269772661;
         let hash: u128 = run(text);
 
-        println!("{:x} :: {:x}", hash, correct);
-        assert_eq!(hash, correct);
+        println!("{:032x} :: {:032x}", correct, hash);
+        assert_eq!(correct, hash);
+    }
+
+    #[test]
+    fn abc() {
+        let text = "abc";
+        let correct: u128 = 0x900150983cd24fb0d6963f7d28e17f72;
+        let hash: u128 = run(text);
+
+        println!("{:032x} :: {:032x}", correct, hash);
+        assert_eq!(correct, hash);
     }
 }
