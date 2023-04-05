@@ -68,7 +68,7 @@ pub fn run(message: &str) -> u128 {
 
     let len_bits: u64 = length as u64 * 8;
     for i in 0..8 {
-        buf[56 + i] = (len_bits >> (56 - i * 8)) as u8;
+        buf[56 + i] = (len_bits << (56 - i * 8)) as u8;
     }
 
     for byte in buf {
@@ -83,8 +83,8 @@ pub fn run(message: &str) -> u128 {
     ];
 
     let mut m = [0u32; 16];    
-    for (word, chunk) in m.iter_mut().zip(buf.chunks_exact(4)) {
-        *word = u32::from_le_bytes(chunk.try_into().unwrap());
+    for (slice, chunk) in m.iter_mut().zip(buf.chunks_exact(4)) {
+        *slice = u32::from_le_bytes(chunk.try_into().unwrap());
     }
 
     for word in m {
@@ -190,7 +190,7 @@ pub fn run(message: &str) -> u128 {
 
     let mut output: u128 = 0;
     for i in 0..4 {
-        output = (output << 32) | u128::from_le(state[i] as u128);
+        output = (output << 32) | state[i] as u128;
     }
 
     output
