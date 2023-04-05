@@ -7,7 +7,7 @@ pub fn run(message: &str) -> u128 {
     for (idx, byte) in message.bytes().enumerate() {
         buf[idx] |= byte; 
     }
-    buf[message.len()] |= 0b10000000;
+    buf[message.len()] |= 0x80;
 
     for i in 0..8 {
         let current_len_byte = (msg_len >> (56 - (i * 8))) as u8; 
@@ -46,17 +46,19 @@ pub fn run(message: &str) -> u128 {
     let mut c = c0;
     let mut d = d0;
 
+    let mut f: u32;
+    let mut tmp: u32;
+
     for i in 0..64 {
-        let mut f: u32;
         let g: usize;
 
         match i {
             0..=15 => {
-                f = (b & c) | ((!b) & d);
+                f = (b & c) | (!b & d);
                 g = i;
             },
             16..=31 => {
-                f = (d & b) | ((!d) & c);
+                f = (d & b) | (!d & c);
                 g = (5 * i + 1) % 16;
             },
             32..=47 => {
@@ -64,16 +66,19 @@ pub fn run(message: &str) -> u128 {
                 g = (3 * i + 5) % 16;
             }, 
             _ => {
-                f = c ^ (b | (!d));
+                f = c ^ (b | !d);
                 g = (7 * i) % 16;
             }
         }
-
-        f = f.wrapping_add(a).wrapping_add(m[g]).wrapping_add(K[i]);
-        a = d;
+        
         d = c;
         c = b;
-        b = b.wrapping_add(f.rotate_left(S[i]));
+        b = f.wrapping_add(a)
+            .wrapping_add(m[g])
+            .wrapping_add(K[i])
+            .rotate_left(S[i])
+            .wrapping_add(b);
+        a = d;
     }
 
     a0 = a0.wrapping_add(a);
